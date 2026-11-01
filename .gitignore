@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+
+# Local TF2 and Workshop user data must never be published.
+/settings.json
+/drafts.json
+/attribute_blocks.json
+/exports/
+.venv/
+venv/

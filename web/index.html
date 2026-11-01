@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#292526">
+  <title>TF2 Schema Workshop</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img id="tf2Logo" class="brand-mark" src="/api/logo/tf2" alt="Team Fortress 2">
+      <div>
+        <h1>Schema Editor</h1>
+      </div>
+    </div>
+    <div class="top-status">
+      <span class="status-light" id="statusLight"></span>
+      <span id="headerStatus">Not synchronized</span>
+      <button id="uiSoundsToggle" class="tiny-button" type="button" aria-pressed="true" title="Toggle optional local TF2 hover sounds. Buttons are silent when clicked.">Hover sounds: On</button>
+      <label class="volume-control" for="uiSoundVolume">
+        <span>Volume</span>
+        <input id="uiSoundVolume" type="range" min="0" max="100" step="5" value="10" aria-label="Hover sound volume">
+        <output id="uiSoundVolumeValue" for="uiSoundVolume">10%</output>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <nav class="workspace-tabs" aria-label="Workshop pages">
+      <button class="workspace-tab active" type="button" data-workspace-page="items" aria-current="page">Item Workshop</button>
+      <button class="workspace-tab" id="soundLibraryTab" type="button" data-workspace-page="sounds" aria-current="false" disabled>Sound Library</button>
+    </nav>
+
+    <section id="soundLibraryPage" class="sound-library-page panel" aria-labelledby="soundLibraryTitle" hidden>
+      <div class="sound-library-heading">
+        <div>
+          <div class="section-kicker">Browse local TF2 audio</div>
+          <h2 id="soundLibraryTitle">Sound Library</h2>
+          <p class="editor-help">Search sounds, play a preview, then apply one to the selected item's sound field. Applying stages an edit; save it in Item Workshop to keep it in your draft.</p>
+        </div>
+        <button id="backToItems" class="button secondary" type="button">Back to Item Workshop</button>
+      </div>
+      <div class="sound-library-target-panel">
+        <div>
+          <span class="section-kicker">Selected item</span>
+          <strong id="soundLibraryTarget">Choose an item in Item Workshop first</strong>
+        </div>
+        <label class="filter-label">Apply sound to
+          <select id="soundLibraryField" class="field">
+            <option value="drop_sound">Drop sound</option>
+            <option value="equip_sound">Equip sound</option>
+            <option value="pickup_sound">Pickup sound</option>
+            <option value="sound_pickup">Pickup event</option>
+            <option value="mouse_pressed_sound">Button sound</option>
+          </select>
+        </label>
+      </div>
+      <label class="sound-library-search">
+        <span>Search sound references</span>
+        <input id="soundLibrarySearch" class="field" type="search" placeholder="Type a sound name or path…" autocomplete="off">
+      </label>
+      <p id="soundLibraryCount" class="section-note sound-library-count" aria-live="polite"></p>
+      <div id="soundLibraryResults" class="sound-library-results"></div>
+      <audio id="soundLibraryAudio" class="sound-library-audio" controls preload="none" hidden></audio>
+      <p id="soundLibraryStatus" class="sound-library-status" role="status" hidden></p>
+    </section>
+
+    <section class="page-items sync-panel panel" aria-labelledby="syncTitle">
+      <div class="sync-copy">
+        <div class="section-kicker">Local game data</div>
+        <h2 id="syncTitle">TF2 Sync</h2>
+        <p id="syncMessage" role="status">Detect your Team Fortress 2 installation to load its item schema and local assets.</p>
+      </div>
+      <div class="sync-controls">
+        <label class="sr-only" for="tfPath">Team Fortress 2 installation folder</label>
+        <input id="tfPath" class="field path-field" type="text" spellcheck="false"
+          placeholder="Team Fortress 2 folder or its tf folder">
+        <button id="browseButton" class="button secondary" type="button">Browse</button>
+        <button id="syncButton" class="button primary" type="button">Sync TF2</button>
+        <button id="openSchemaButton" class="button secondary" type="button" disabled>Open schema copy</button>
+        <button id="exportButton" class="button export-button" type="button" disabled
+          title="Choose any save location outside the TF2 installation.">Save schema copy</button>
+      </div>
+      <div id="syncError" class="sync-error" hidden></div>
+      <div id="exportMessage" class="export-message" hidden></div>
+    </section>
+
+    <section class="page-items browser-toolbar panel" aria-label="Item filters">
+      <label class="search-wrap">
+        <span class="search-icon" aria-hidden="true"></span>
+        <span class="sr-only">Search item names</span>
+        <input id="searchInput" class="field search-field" type="search" placeholder="Search actual item names…" disabled>
+      </label>
+      <div class="filter-label">Class
+        <div class="checkbox-filter" id="classFilter">
+          <button class="field checkbox-filter-trigger" type="button" aria-expanded="false" disabled>Any class</button>
+          <div class="checkbox-filter-menu" hidden></div>
+        </div>
+      </div>
+      <label class="filter-label">Slot
+        <select id="slotFilter" class="field" disabled>
+          <option value="">All slots</option>
+        </select>
+      </label>
+      <div class="filter-label">Category
+        <div class="checkbox-filter" id="categoryFilter">
+          <button class="field checkbox-filter-trigger" type="button" aria-expanded="false" disabled>Category</button>
+          <div class="checkbox-filter-menu" hidden></div>
+        </div>
+      </div>
+      <label class="filter-label">Item type
+        <select id="typeFilter" class="field" disabled>
+          <option value="">All types</option>
+        </select>
+      </label>
+      <label class="filter-label">Has attribute
+        <select id="attributeFilter" class="field" disabled>
+          <option value="">Any attribute</option>
+        </select>
+      </label>
+      <label class="filter-label sort-label">Sort items
+        <select id="sortFilter" class="field" disabled>
+          <option value="name">Name</option>
+          <option value="defindex">Definition index</option>
+          <option value="class">Class</option>
+          <option value="category">Category</option>
+          <option value="type">Item type</option>
+          <option value="year-added">Year added (oldest first)</option>
+          <option value="year-added-desc">Year added (newest first)</option>
+          <option value="attributes">Most attributes</option>
+          <option value="attributes-asc">Fewest attributes</option>
+        </select>
+        <span class="sr-only">Year sorting uses the schema's first sale date; items without a date appear last.</span>
+      </label>
+      <div class="result-count" id="resultCount" aria-live="polite">Sync TF2 to browse</div>
+    </section>
+
+    <section class="page-items workspace" aria-label="TF2 item browser">
+      <div class="list-panel panel">
+        <div class="panel-heading">
+          <div>
+            <div class="section-kicker">Local item definitions</div>
+            <h2>Items</h2>
+          </div>
+          <div class="list-actions">
+            <span class="count-badge" id="totalCount">—</span>
+            <button id="selectVisibleTargets" class="tiny-button" type="button" disabled title="Add every item currently shown by the filters to the block targets.">Add filtered to targets</button>
+            <button id="clearTargets" class="tiny-button" type="button" disabled title="Remove every item from the block target selection.">Clear all targets</button>
+            <span id="targetCount" class="target-count">0 targets</span>
+          </div>
+        </div>
+        <p class="target-help">Targets are the items a saved block will affect. “Add filtered” only selects them; it does not edit anything. Applying a block asks for confirmation first.</p>
+        <nav class="item-view-tabs" aria-label="Item list view">
+          <button class="item-view-tab active" type="button" data-item-view="all" aria-pressed="true">All items</button>
+          <button class="item-view-tab" type="button" data-item-view="edited" aria-pressed="false">Edited items</button>
+          <button class="item-view-tab" type="button" data-item-view="unsaved" aria-pressed="false">Unsaved items</button>
+          <label id="hideEditedFilter" class="list-hide-edited">
+            <input id="hideEditedCheckbox" type="checkbox">
+            <span>Hide edited</span>
+          </label>
+        </nav>
+        <div id="itemViewport" class="item-viewport" aria-label="Filtered TF2 items">
+          <div id="itemSpacer" class="item-spacer"></div>
+          <div id="itemRows" class="item-rows"></div>
+          <div id="emptyList" class="empty-list">Items from your local TF2 schema will appear here after sync.</div>
+        </div>
+      </div>
+
+      <aside class="detail-panel panel" aria-live="polite">
+        <div id="detailEmpty" class="detail-empty">
+          <div class="empty-emblem" aria-hidden="true">TF2</div>
+          <h2>Inspect an item</h2>
+          <p>Choose an item from the local schema to view its in-game name, definition, icon, sounds, and metadata.</p>
+        </div>
+        <div id="detailContent" hidden>
+          <div class="detail-topline">
+            <span class="section-kicker">Item inspection</span>
+            <span class="detail-badges">
+              <span class="category-badge" id="detailCategory"></span>
+              <span class="defindex-badge" id="detailDefindex"></span>
+              <span class="edited-badge" id="detailEdited" hidden>Edited</span>
+              <span class="edited-badge unsaved-badge" id="detailUnsaved" hidden>Unsaved</span>
+              <button id="saveItemButton" class="button primary save-item-button" type="button" hidden>Save item changes</button>
+              <button id="revertItemButton" class="tiny-button" type="button" hidden>Revert this item</button>
+            </span>
+          </div>
+          <div class="detail-identity">
+            <div class="detail-icon icon-fallback" id="detailIconWrap">
+              <span class="fallback-mark" aria-hidden="true">?</span>
+              <img id="detailIcon" alt="" hidden>
+            </div>
+            <div class="detail-title">
+              <h2 id="detailName"></h2>
+              <button id="viewTypeItems" class="item-type type-link" type="button" title="Show every item with this type"></button>
+              <p id="detailClass" class="class-line"></p>
+            </div>
+          </div>
+          <p id="detailDescription" class="description" hidden></p>
+
+          <section class="detail-section type-editor-section" aria-label="Edit item type">
+            <div class="section-heading">
+              <h3>Item type</h3>
+              <span class="section-tools"><span id="typeChangeMarker" class="change-marker" hidden>Changed</span><button id="resetTypeButton" class="tiny-button section-reset" type="button" hidden>Reset</button></span>
+            </div>
+            <div class="item-type-controls">
+              <label class="sr-only" for="itemTypeSelect">Choose an existing item type</label>
+              <select id="itemTypeSelect" class="field" disabled>
+                <option value="">No item type</option>
+              </select>
+              <label class="sr-only" for="newItemType">Create a new item type</label>
+              <input id="newItemType" class="field" type="text" maxlength="256" placeholder="Or enter a new type…">
+              <button id="saveItemType" class="tiny-button" type="button" disabled>Use type</button>
+            </div>
+            <p class="editor-help">Choose an existing type or enter a new type name, then select Use type to change this item. To browse matching items, click the type name above. Select Save item changes to keep the edit in your Workshop draft.</p>
+          </section>
+
+          <section class="detail-section" aria-labelledby="soundTitle">
+            <div class="section-heading">
+              <h3 id="soundTitle">Item sounds</h3>
+              <span class="section-tools"><span class="section-note">Choose from local TF2 sounds</span><button id="resetSoundsButton" class="tiny-button section-reset" type="button" hidden>Reset</button></span>
+            </div>
+            <div id="soundList" class="sound-list">
+              <p class="muted">No sound references are defined for this item.</p>
+            </div>
+          </section>
+
+          <section class="detail-section editor-section" aria-labelledby="blocksTitle">
+            <div class="section-heading">
+              <h3 id="blocksTitle">Attribute blocks</h3>
+              <span class="section-tools"><span class="section-note">Draft edits only</span><button id="resetAttributesButton" class="tiny-button section-reset" type="button" hidden>Reset</button></span>
+            </div>
+            <p class="editor-help">Add any attribute defined by the local TF2 schema directly to this item. For counts_as_assister, enter <code>1</code>. The attribute and value will appear in the list below. Use “Copy” to include existing values in a reusable block instead.</p>
+            <label class="attribute-sort-label">Sort item attributes
+              <select id="attributeSort" class="field" disabled>
+                <option value="name">Name</option>
+                <option value="type">Attribute class</option>
+                <option value="effect">Effect</option>
+              </select>
+            </label>
+            <div class="add-attribute-form">
+              <label for="addAttributeSelect">Add attribute</label>
+              <select id="addAttributeSelect" class="field" disabled aria-label="Choose a TF2 attribute">
+                <option value="">Choose an attribute…</option>
+              </select>
+              <input id="addAttributeValue" class="field" type="text" maxlength="512" placeholder="Attribute value" disabled>
+              <button id="addAttributeButton" class="tiny-button" type="button" disabled>Add / update</button>
+              <p id="addAttributeHelp" class="editor-help">Choose a schema attribute to see its description and value format.</p>
+            </div>
+            <div class="attribute-actions">
+              <button id="selectAllAttributes" class="tiny-button" type="button" disabled>Select all to copy</button>
+              <button id="toggleCurrentTarget" class="tiny-button" type="button" disabled>Target inspected item</button>
+            </div>
+            <div id="attributeEntries" class="attribute-entries">
+              <p class="muted">Sync to inspect item attributes.</p>
+            </div>
+            <div id="compatibilityEntries" class="compatibility-entries"></div>
+            <div class="capabilities-editor">
+              <div class="section-heading">
+                <h3>Item capabilities</h3>
+                <span class="section-tools"><span class="section-note">Resolved from item and prefab</span><button id="resetCapabilitiesButton" class="tiny-button section-reset" type="button" hidden>Reset</button></span>
+              </div>
+              <div id="capabilityEntries" class="capability-entries"></div>
+            </div>
+            <div class="block-create">
+              <label class="sr-only" for="blockName">Reusable block name</label>
+              <input id="blockName" class="field" type="text" maxlength="100" placeholder="Optional block name">
+              <button id="saveBlockButton" class="button secondary" type="button" disabled>Save selected values</button>
+            </div>
+            <div class="custom-property">
+              <input id="customPropertyName" class="field" type="text" placeholder="Advanced: exact schema flag key">
+              <input id="customPropertyValue" class="field" type="text" placeholder="Value">
+              <button id="addCustomProperty" class="tiny-button" type="button" disabled>Add flag to set</button>
+            </div>
+            <p class="editor-error" id="editorError" hidden></p>
+            <div class="block-shelf-heading">
+              <h4>Saved attribute sets</h4>
+              <span id="draftCount" class="section-note">0 edited items</span>
+            </div>
+            <p class="editor-help">A saved attribute set is a named bundle of checked values from this item. To reuse it, select target items on the left and press Apply. That changes Workshop drafts only, never the installed TF2 files; a confirmation lists the number of items first.</p>
+            <div id="blockShelf" class="block-shelf">
+              <p class="muted">Save an attribute block to reuse it.</p>
+            </div>
+          </section>
+
+          <section class="detail-section metadata-section" aria-labelledby="metadataTitle">
+            <div class="section-heading">
+              <h3 id="metadataTitle">Schema metadata</h3>
+            </div>
+            <dl id="metadataList" class="metadata-list"></dl>
+          </section>
+          <p class="asset-debug" id="assetDebug"></p>
+        </div>
+      </aside>
+    </section>
+    <footer class="page-items footer">
+      <span>Everything stays on this computer. Item data and previews come from your TF2 installation.</span>
+      <span id="archiveInfo"></span>
+    </footer>
+  </main>
+</body>
+</html>
