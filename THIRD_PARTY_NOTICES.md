@@ -25,3 +25,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Python runtime
+
+The portable Windows build bundles the Python runtime. Its license is included
+as `Python-LICENSE.txt` in the release archive. Python is distributed under
+the Python Software Foundation License.
+
+## PyInstaller bootloader
+
+The portable Windows build is packaged with PyInstaller. The PyInstaller
+bootloader is distributed under the GNU General Public License with the
+bootloader exception. The applicable license text is included as
+`PyInstaller-COPYING.txt` in the release archive.

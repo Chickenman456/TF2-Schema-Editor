@@ -8,3 +8,7 @@ __pycache__/
 /exports/
 .venv/
 venv/
+.build-venv/
+/build/
+/dist/
+/TF2SchemaWorkshop.spec

@@ -8,6 +8,7 @@ import threading
 import uuid
 from collections import Counter
 
+from . import __version__
 from .editing import export_copy
 from .tf2 import Schema, TF2Files
 
@@ -209,7 +210,7 @@ class Workshop:
     def status(self):
         with self.lock:
             return {
-                "version": "1.0.0",
+                "version": __version__,
                 "tf_dir": self.tf_dir or "",
                 "state": dict(self.job),
                 "item_count": len(self.schema.items) if self.schema else 0,

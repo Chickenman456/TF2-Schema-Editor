@@ -12,7 +12,11 @@ from . import __version__
 from .app import ITEM_CATEGORIES, Workshop
 
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = getattr(
+    sys,
+    "_MEIPASS",
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+)
 WEB_ROOT = os.path.join(ROOT, "web")
 STATIC_FILES = {
     "/": ("index.html", "text/html; charset=utf-8"),
@@ -233,7 +237,7 @@ class Handler(BaseHTTPRequestHandler):
 
 class LocalHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
-    allow_reuse_address = True
+    allow_reuse_address = os.name != "nt"
 
 
 def main(argv=None):

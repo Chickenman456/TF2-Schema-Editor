@@ -17,6 +17,16 @@ python -m schema_workshop.server
 
 The selected TF2 path is saved in `%LOCALAPPDATA%\TF2SchemaWorkshop\settings.json`. Nothing is uploaded; the server listens only on this computer.
 
+### Portable Windows release
+
+The GitHub Releases page can provide a portable ZIP that runs without a separate Python installation:
+
+1. Download and extract `TF2SchemaWorkshop-windows-x64.zip`.
+2. Double-click `TF2SchemaWorkshop.exe`.
+3. Use **Sync TF2** to index a local Team Fortress 2 installation.
+
+To build the ZIP from source on 64-bit Windows, install Python 3.10 or newer and run `build_windows.bat`. It installs the pinned build-only dependency from `requirements-build.txt` and writes the package to `dist\TF2SchemaWorkshop-windows-x64.zip`. The ZIP includes the runtime license notices and does not include Team Fortress 2 files. Windows may display a SmartScreen warning because the executable is not code-signed.
+
 ## Included features
 
 - Steam library detection, manual folder selection, and remembered TF2 path.
@@ -46,7 +56,7 @@ The selected TF2 path is saved in `%LOCALAPPDATA%\TF2SchemaWorkshop\settings.jso
 
 ## Notes
 
-- The application requires Python 3.8+ and uses only the Python standard library. No TF2 assets or sample items are bundled.
+- The source application requires Python 3.8+ and uses only the Python standard library at runtime. Building the portable Windows package requires Python 3.10+ and PyInstaller. No TF2 assets or sample items are bundled.
 - Items without a local `image_inventory` material, unsupported VTF texture format, missing VPK split file, or missing audio file remain browsable and show an explicit fallback/debug path.
 - VPK indexing covers top-level `*_dir.vpk` archives and excludes loose files beneath `custom`, `download`, `downloads`, `cache`, `logs`, and `temp`.
 - Browser support for audio playback depends on the audio format and browser.
